@@ -1,67 +1,63 @@
-# ApnaStudent - Student Portfolio & Project Showcase Platform
+# ApnaStudent - Student Project Portfolio Platform 🚀
 
-**ApnaStudent** is a modern, full-stack web application designed for students to showcase their projects, skills, and portfolios in a professional and visually stunning way. It connects students with peers and potential recruiters by allowing them to create dynamic profiles and share their work.
+**ApnaStudent** is a modern platform designed for students to showcase their academic and personal projects. It acts as a centralized portfolio where students can upload project details, GitHub links, and live demos, creating a public profile to share with recruiters and peers.
 
-
+Built with a **Spring Boot** backend and a **React (Vite)** frontend, it features a premium "Glassmorphism" UI, secure authentication via **Clerk**, and a flexible **MongoDB** database.
 
 ---
 
-## 🚀 Key Features
+## ✨ Key Features
 
-*   **🎓 Student Portfolios**: Create a unique profile (`apnastudent.com/username`) to share your bio, USN, and skills.
-*   **📂 Project Showcase**: Upload project details, GitHub links, live demos, and rich README documentation.
-*   **🔍 Global Search**: Find students by name or username instantly with our powerful search bar.
-*   **🔐 Secure Authentication**: Seamless Login/Register flow powered by **Clerk** (supports Google Auth).
-*   **🎨 Glassmorphism UI**: A premium, "Space/Dark Mode" aesthetic built with Tailwind CSS and advanced animations.
-*   **🛠️ Admin Dashboard**: Manage users, view platform statistics, and moderate content.
-*   **📱 Mobile Responsive**: Fully optimized for all devices.
+### 👨‍🎓 For Students
+*   **Portfolio Profile**: A public, shareable profile page (e.g., `apnastudent.com/u/john_doe`) showcasing all your work.
+*   **Project Management**: Add, **Edit**, and Delete projects.
+*   **Markdown Support**: Write rich project descriptions with headers, code blocks, and lists (just like GitHub Readmes).
+*   **Profile Customization**: **Edit** your Bio, Name, and University ID (USN) directly from your profile.
+*   **Secure Login**: Seamless sign-in/sign-up using **Clerk** (Google/GitHub/Email).
+
+### 🔎 For Recruiters & Peers
+*   **Global Search**: Find students by Name or Username instantly.
+*   **Project Explorer**: Browse projects with links to source code (GitHub) and live demos.
+
+### 🛡️ Admin Features
+*   **Admin Dashboard**: View platform statistics (Total Users, Total Projects).
+*   **User Management**: Search for users and delete accounts (moderation).
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Frontend
-*   **React (Vite)**: Fast, modern UI library.
-*   **Tailwind CSS**: Utility-first styling for the Glassmorphism design.
-*   **Clerk**: Best-in-class authentication and user management.
-*   **Axios**: For API communication.
-
-### Backend
-*   **Java 21 (Spring Boot)**: Robust, enterprise-grade backend API.
-*   **Spring Data JPA (Hibernate)**: ORM for database interactions.
-*   **Database**:
-    *   **Local**: MySQL (for development).
-    *   **Production**: PostgreSQL (Render Cloud DB).
-*   **Docker**: Containerized deployment support.
+*   **Frontend**: React (Vite), TypeScript, Tailwind CSS (Glassmorphism Design).
+*   **Backend**: Java 21, Spring Boot 3.4.
+*   **Database**: **MongoDB** (switched from SQL for flexibility).
+*   **Authentication**: Clerk.com.
+*   **Deployment**: Render (Backend & DB), Vercel (Frontend).
 
 ---
 
-## ⚙️ Local Setup Guide
-
-Follow these steps to run the project on your machine.
+## 🚀 Getting Started
 
 ### Prerequisites
+*   Node.js & npm
 *   Java 21 (JDK)
-*   Node.js (v18+)
-*   MySQL Server (Running locally)
+*   MongoDB Cluster (Atlas) or Local MongoDB
 
 ### 1. Backend Setup
-1.  Navigate to the `backend` folder:
+1.  Navigate to `backend/`:
     ```bash
     cd backend
     ```
-2.  Open `src/main/resources/application.properties` and update your MySQL password:
-    ```properties
-    spring.datasource.password=YOUR_MYSQL_PASSWORD
-    ```
+2.  Configure Database:
+    *   The app uses `MONGO_URL` from environment variables.
+    *   For local dev, it defaults to `mongodb://localhost:27017/apnastudent_db`.
 3.  Run the application:
     ```bash
     ./mvnw spring-boot:run
     ```
-    The server will start at `http://localhost:8080`.
+    *Server starts on `http://localhost:8080`*
 
 ### 2. Frontend Setup
-1.  Navigate to the `frontend` folder:
+1.  Navigate to `frontend/`:
     ```bash
     cd frontend
     ```
@@ -69,40 +65,34 @@ Follow these steps to run the project on your machine.
     ```bash
     npm install
     ```
-3.  Create a `.env` file in `frontend/` and add:
+3.  Set up Environment Variables (`.env`):
     ```env
-    VITE_CLERK_PUBLISHABLE_KEY=pk_test_... (Get this from Clerk Dashboard)
+    VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
     VITE_API_URL=http://localhost:8080/api
     ```
 4.  Run the development server:
     ```bash
     npm run dev
     ```
-    The app will open at `http://localhost:5173`.
+    *App opens at `http://localhost:5173`*
 
 ---
 
-## ☁️ Deployment
+## 📦 Deployment
 
-This project is configured for cloud deployment.
+### Backend (Render)
+*   **Type**: Web Service (Docker)
+*   **Env Vars**:
+    *   `MONGO_URL`: `mongodb+srv://<user>:<pass>@cluster...`
+    *   `PORT`: `8080`
 
-*   **Backend**: Deploy on **Render** (using Docker runtime).
-*   **Database**: Hosted **PostgreSQL** on Render.
-*   **Frontend**: Deploy on **Vercel** or **Netlify**.
-
-> For detailed deployment instructions, please refer to the internal [DEPLOYMENT.md](DEPLOYMENT.md) guide (if available) or check the project wiki.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/NewFeature`).
-3.  Commit your changes.
-4.  Push to the branch.
-5.  Open a Pull Request.
+### Frontend (Vercel)
+*   **Type**: Vite SPA
+*   **Env Vars**:
+    *   `VITE_API_URL`: `https://your-backend.onrender.com/api`
+    *   `VITE_CLERK_PUBLISHABLE_KEY`: `pk_test_...`
 
 ---
 
-**Developed with ❤️ by Vijay**
+### 🤝 Contributing
+Built with ❤️ by **Vijay**.
