@@ -1,23 +1,21 @@
 package com.apnastudent.backend.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Data;
 
-@Entity
+@Document(collection = "users")
 @Data
-@Table(name = "users")
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String name;
 
-    @Column(unique = true, nullable = false)
+    // We enforce uniqueness at the Application/Service level or use @Indexed(unique=true)
     private String email;
 
-    @Column(unique = true, nullable = true) // Nullable for existing users, but frontend should enforce it
     private String username;
 
     private String password;
@@ -26,7 +24,6 @@ public class User {
 
     private String role; // We will store "STUDENT" or "ADMIN" here
 
-    @Column(length = 500) // Allow up to 500 characters
     private String bio;
 
     // Email Verification Fields

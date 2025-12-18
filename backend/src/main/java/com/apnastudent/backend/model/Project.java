@@ -1,20 +1,15 @@
 package com.apnastudent.backend.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Data;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
 
-// import com.fasterxml.jackson.annotation.JsonIgnore; // Removed
-
-@Entity
+@Document(collection = "projects")
 @Data
-@Table(name = "projects")
 public class Project {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String title;
 
@@ -24,18 +19,21 @@ public class Project {
 
     private String demoUrl;
 
-    // @Lob tells JPA this is a Large Object
-    // "TEXT" maps to TEXT in Postgres (Unlimited) and TEXT in MySQL (64KB).
-    // For wider compatibility or larger files in MySQL, we relies on JPA/Hibernate dialect handling.
-    @Lob
-    @Column(columnDefinition = "TEXT")
     private String readmeContent;
 
     // RELATIONSHIP MAPPING
-    // Many projects can belong to One user.
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
-    private User user;
+    // In NoSQL, we usually store the reference ID directly.
+    private String userId;
+
+    // COMPATIBILITY: Frontend sends "user": { "id": "..." }
+    // This setter unpacks it so we don't break the API.
+    @com.fasterxml.jackson.annotation.JsonProperty("user")
+    private void unpackUser(java.util.Map<String, Object> user) {
+        if (user != null && user.get("id") != null) {
+            this.userId = String.valueOf(user.get("id"));
+        }
+    }
+    
+    // Optional: We can store a minimal User object if we want to avoid extra queries,
+    // but for now, just the ID is enough.
 }

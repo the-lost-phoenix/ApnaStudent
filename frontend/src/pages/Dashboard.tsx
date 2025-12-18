@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addProject, getStudentProjects, deleteProject } from '../services/api';
+import { addProject, getStudentProjects, deleteProject, updateProject } from '../services/api';
 import UserSearch from '@/components/UserSearch';
 
 const Dashboard = () => {
@@ -9,6 +9,10 @@ const Dashboard = () => {
     const [projects, setProjects] = useState<any[]>([]);
     const [showAddForm, setShowAddForm] = useState(false);
     const [activeProject, setActiveProject] = useState<any>(null);
+
+    // Edit State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -31,7 +35,7 @@ const Dashboard = () => {
         }
     }, []);
 
-    const fetchMyProjects = async (userId: number) => {
+    const fetchMyProjects = async (userId: string) => {
         const data = await getStudentProjects(userId);
         setProjects(data);
     };
@@ -53,9 +57,19 @@ const Dashboard = () => {
                 user: { id: user.id }
             };
 
-            await addProject(payload);
-            alert("Project Added Successfully!");
+            if (isEditing && editingProjectId) {
+                // UPDATE EXISTING PROJECT
+                await updateProject(editingProjectId, payload);
+                alert("Project Updated Successfully!");
+            } else {
+                // CREATE NEW PROJECT
+                await addProject(payload);
+                alert("Project Added Successfully!");
+            }
+
             setShowAddForm(false); // Close form
+            setIsEditing(false);
+            setEditingProjectId(null);
             fetchMyProjects(user.id); // Refresh list
 
             // Clear form
@@ -107,7 +121,11 @@ const Dashboard = () => {
                     </div>
 
                     <button
-                        onClick={() => setShowAddForm(!showAddForm)}
+                        onClick={() => {
+                            setShowAddForm(!showAddForm);
+                            setIsEditing(false);
+                            setFormData({ title: '', description: '', githubUrl: '', demoUrl: '', readmeContent: '' });
+                        }}
                         className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${showAddForm ? 'bg-gray-800 text-white' : 'bg-gradient-to-r from-orange-500 to-amber-500 text-black shadow-lg shadow-orange-500/20 hover:scale-105'}`}
                     >
                         {showAddForm ? "✖ Close Form" : "+ Add New Project"}
@@ -117,7 +135,7 @@ const Dashboard = () => {
                 {/* ADD PROJECT FORM (Collapsible) */}
                 {showAddForm && (
                     <div className="mb-12 glass-card p-8 animate-fade-in-up">
-                        <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4">Add Project Details</h3>
+                        <h3 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4">{isEditing ? "Edit Project" : "Add Project Details"}</h3>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -146,9 +164,12 @@ const Dashboard = () => {
                                 <textarea className="glass-input min-h-[200px] font-mono text-sm" placeholder="# Project Documentation" value={formData.readmeContent} onChange={e => setFormData({ ...formData, readmeContent: e.target.value })}></textarea>
                             </div>
 
-                            <div className="flex justify-end">
+                            <div className="flex justify-end gap-3">
+                                <button type="button" onClick={() => { setShowAddForm(false); setIsEditing(false); }} className="text-gray-400 hover:text-white px-4 py-2">
+                                    Cancel
+                                </button>
                                 <button type="submit" className="btn-primary">
-                                    🚀 Publish Project
+                                    {isEditing ? "💾 Save Changes" : "🚀 Publish Project"}
                                 </button>
                             </div>
                         </form>
@@ -186,6 +207,32 @@ const Dashboard = () => {
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+
+                                {/* Edit Button (Next to delete) */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        // Load data into form
+                                        setFormData({
+                                            title: p.title,
+                                            description: p.description,
+                                            githubUrl: p.githubUrl || '',
+                                            demoUrl: p.demoUrl || '',
+                                            readmeContent: p.readmeContent || ''
+                                        });
+                                        setEditingProjectId(p.id);
+                                        setIsEditing(true);
+                                        setShowAddForm(true);
+                                        // Scroll to form
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    className="absolute top-4 right-12 text-gray-500 hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity z-10 mr-2"
+                                    title="Edit Project"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </button>
 

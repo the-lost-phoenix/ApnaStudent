@@ -21,6 +21,7 @@ public class UserService {
 
     // Logic: Register a new student
     public User registerUser(User user) {
+        // ... (existing logic)
         // Check if email already exists
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Email already registered!");
@@ -37,6 +38,20 @@ public class UserService {
 
         // Save the user to the database
         return userRepository.save(user);
+    }
+    
+    // Logic: Update user details
+    public User updateUser(String id, User updatedStats) {
+        User existingUser = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+            
+        // Update fields if they are not null
+        if(updatedStats.getName() != null) existingUser.setName(updatedStats.getName());
+        if(updatedStats.getBio() != null) existingUser.setBio(updatedStats.getBio());
+        if(updatedStats.getUsn() != null) existingUser.setUsn(updatedStats.getUsn());
+        // Add other fields as necessary
+        
+        return userRepository.save(existingUser);
     }
 
     // Logic: Find a user by their email (for Login)
@@ -61,7 +76,7 @@ public class UserService {
     }
 
     // Logic: Delete user (Cascade deletes projects via DB/JPA)
-    public void deleteUser(Long id) {
+    public void deleteUser(String id) {
         userRepository.deleteById(id);
     }
 

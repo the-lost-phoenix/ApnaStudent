@@ -18,7 +18,7 @@ export const searchStudents = async (name: string) => {
 };
 
 // Project APIs (We will use these later)
-export const getStudentProjects = async (userId: number) => {
+export const getStudentProjects = async (userId: string) => {
     const response = await api.get(`/projects/user/${userId}`);
     return response.data;
 };
@@ -30,7 +30,7 @@ export const getStudentByUsername = async (username: string) => {
 };
 
 
-export const getUserById = async (id: number) => {
+export const getUserById = async (id: string) => {
     const response = await api.get(`/users/${id}`);
     return response.data;
 };
@@ -65,8 +65,14 @@ export const addProject = async (projectData: any) => {
 };
 
 // 4. Delete a Project
-export const deleteProject = async (id: number) => {
+export const deleteProject = async (id: string) => {
     await api.delete(`/projects/${id}`);
+};
+
+// 5. Update a Project
+export const updateProject = async (id: string, projectData: any) => {
+    const response = await api.put(`/projects/${id}`, projectData);
+    return response.data;
 };
 
 // ---------------- ADMIN APIs ----------------
@@ -81,7 +87,13 @@ export const getAllUsers = async () => {
     return response.data;
 };
 
-export const deleteUser = async (id: number) => {
+// Update User (For Bio/Profile)
+export const updateUser = async (id: string, userData: any) => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+};
+
+export const deleteUser = async (id: string) => {
     await api.delete(`/users/${id}`);
 };
 

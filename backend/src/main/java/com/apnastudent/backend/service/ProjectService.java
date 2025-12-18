@@ -19,18 +19,18 @@ public class ProjectService {
 
     // Logic: Add a project to the database
     public Project addProject(Project project) {
-        // FIX: The project comes with a "fake" user (only ID).
-        // We must fetch the REAL user from the DB and attach it.
-        if (project.getUser() != null && project.getUser().getId() != null) {
-            User realUser = userRepository.findById(project.getUser().getId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-            project.setUser(realUser);
+        // In NoSQL mode, the project already has "userId" populated via the unpackUser method.
+        // We can verify if the user exists if we want to be strict.
+        if (project.getUserId() != null) {
+            if (!userRepository.existsById(project.getUserId())) {
+                throw new RuntimeException("User not found: " + project.getUserId());
+            }
         }
         return projectRepository.save(project);
     }
 
-    public List<Project> getProjectsByUserId(Long userId) {
-        return projectRepository.findByUser_Id(userId);
+    public List<Project> getProjectsByUserId(String userId) {
+        return projectRepository.findByUserId(userId);
     }
 
     public List<Project> getAllProjects() {
@@ -38,7 +38,21 @@ public class ProjectService {
     }
 
     // Logic: Delete a project
-    public void deleteProject(Long id) {
+    public void deleteProject(String id) {
         projectRepository.deleteById(id);
+    }
+    
+    // Logic: Update Project
+    public Project updateProject(String id, Project updatedProject) {
+        Project existingProject = projectRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Project not found"));
+            
+        if(updatedProject.getTitle() != null) existingProject.setTitle(updatedProject.getTitle());
+        if(updatedProject.getDescription() != null) existingProject.setDescription(updatedProject.getDescription());
+        if(updatedProject.getGithubUrl() != null) existingProject.setGithubUrl(updatedProject.getGithubUrl());
+        if(updatedProject.getDemoUrl() != null) existingProject.setDemoUrl(updatedProject.getDemoUrl());
+        if(updatedProject.getReadmeContent() != null) existingProject.setReadmeContent(updatedProject.getReadmeContent());
+        
+        return projectRepository.save(existingProject);
     }
 }

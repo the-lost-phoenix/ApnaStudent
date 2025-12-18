@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getStudentProjects, getStudentByUsername, deleteUser } from '../services/api';
+import { getStudentProjects, getStudentByUsername, deleteUser, updateUser } from '../services/api';
+import ReactMarkdown from 'react-markdown';
 
 // Define types for our data so TypeScript is happy
 interface Project {
-    id: number;
+    id: string;
     title: string;
     description: string;
     githubUrl: string;
@@ -13,7 +14,7 @@ interface Project {
 }
 
 interface User {
-    id: number;
+    id: string;
     name: string;
     email: string;
     bio: string;
@@ -31,6 +32,10 @@ const StudentProfile = () => {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [activeProject, setActiveProject] = useState<any>(null);
+
+    // Edit Profile State
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({ name: '', bio: '', usn: '' });
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -64,6 +69,27 @@ const StudentProfile = () => {
 
         fetchData();
     }, [username]);
+
+    const handleProfileUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!student) return;
+
+        try {
+            const updatedUser = await updateUser(student.id, profileForm);
+            setStudent(updatedUser);
+            // Update local storage if editing self
+            if (currentUser && currentUser.id === student.id) {
+                const newUserData = { ...currentUser, ...updatedUser };
+                localStorage.setItem("user", JSON.stringify(newUserData));
+                setCurrentUser(newUserData);
+            }
+            alert("Profile Updated!");
+            setIsEditingProfile(false);
+        } catch (error) {
+            console.error("Update failed", error);
+            alert("Failed to update profile.");
+        }
+    };
 
     // Loading State UI
     if (loading) {
@@ -115,9 +141,51 @@ const StudentProfile = () => {
                         <div className="px-6 py-3 bg-white/5 border border-white/10 rounded-full text-gray-400 text-sm font-mono">
                             USN: {student.usn || "N/A"}
                         </div>
+                        {currentUser && currentUser.id === student.id && (
+                            <button
+                                onClick={() => {
+                                    setProfileForm({
+                                        name: student.name,
+                                        bio: student.bio || '',
+                                        usn: student.usn || ''
+                                    });
+                                    setIsEditingProfile(true);
+                                }}
+                                className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-full text-white text-sm transition-all flex items-center gap-2"
+                            >
+                                ✏️ Edit Profile
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {/* EDIT PROFILE MODAL */}
+            {isEditingProfile && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setIsEditingProfile(false)}>
+                    <div className="w-full max-w-md glass-card p-8 relative" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="text-2xl font-bold text-white mb-6">Edit Profile</h2>
+                        <form onSubmit={handleProfileUpdate} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-gray-400 uppercase">Full Name</label>
+                                <input className="glass-input" value={profileForm.name} onChange={e => setProfileForm({ ...profileForm, name: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-400 uppercase">Bio</label>
+                                <textarea className="glass-input min-h-[100px]" value={profileForm.bio} onChange={e => setProfileForm({ ...profileForm, bio: e.target.value })} />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-400 uppercase">USN (University ID)</label>
+                                <input className="glass-input" value={profileForm.usn} onChange={e => setProfileForm({ ...profileForm, usn: e.target.value })} />
+                            </div>
+                            <div className="flex gap-4 mt-6">
+                                <button type="button" onClick={() => setIsEditingProfile(false)} className="flex-1 py-2 text-gray-400 hover:text-white">Cancel</button>
+                                <button type="submit" className="flex-1 btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* PROJECTS SECTION */}
             <div className="max-w-7xl mx-auto px-6">
@@ -211,9 +279,15 @@ const StudentProfile = () => {
                                 )}
                             </div>
 
+                            import ReactMarkdown from 'react-markdown';
+
+                            // ... (inside the content area)
+
                             <div className="text-gray-300 leading-relaxed font-light whitespace-pre-wrap font-sans border-t border-white/10 pt-6">
                                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4">About this project</h3>
-                                {activeProject.readmeContent || "No detailed documentation provided."}
+                                <div className="prose prose-invert prose-sm max-w-none">
+                                    <ReactMarkdown>{activeProject.readmeContent || "No detailed documentation provided."}</ReactMarkdown>
+                                </div>
                             </div>
                         </div>
                     </div>

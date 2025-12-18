@@ -1,12 +1,12 @@
 package com.apnastudent.backend.repository;
 
 import com.apnastudent.backend.model.User;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 import java.util.List;
 
-// JpaRepository<Entity, ID_Type>
-public interface UserRepository extends JpaRepository<User, Long> {
+// MongoRepository<Document, ID_Type>
+public interface UserRepository extends MongoRepository<User, String> {
 
     // Custom Query: Find a user by their email (for login)
     // Spring Boot writes the SQL for this automatically just by reading the method

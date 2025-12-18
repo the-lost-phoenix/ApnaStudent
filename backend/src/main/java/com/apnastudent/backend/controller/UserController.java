@@ -54,11 +54,18 @@ public class UserController {
 
     // URL: GET http://localhost:8080/api/users/{id}
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id) {
+    public User getUserById(@PathVariable String id) {
         return userService.getAllUsers().stream()
                 .filter(u -> u.getId().equals(id))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    // 8. Update User Details
+    // URL: PUT http://localhost:8080/api/users/{id}
+    @PutMapping("/{id}")
+    public User updateUser(@PathVariable String id, @RequestBody User user) {
+        return userService.updateUser(id, user);
     }
 
     // URL: GET http://localhost:8080/api/users/u/{username}
@@ -73,7 +80,7 @@ public class UserController {
     // 6. Delete User
     // URL: DELETE http://localhost:8080/api/users/{id}
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
+    public void deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
     }
 

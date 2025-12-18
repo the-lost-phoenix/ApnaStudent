@@ -32,7 +32,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDeleteUser = async (id: number) => {
+    const handleDeleteUser = async (id: string) => {
         if (window.confirm("Are you sure? This will delete the user and ALL their projects.")) {
             try {
                 await deleteUser(id);
