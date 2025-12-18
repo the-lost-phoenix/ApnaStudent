@@ -3,6 +3,7 @@
 **ApnaStudent** is a modern, full-stack web application designed for students to showcase their projects, skills, and portfolios in a professional and visually stunning way. It connects students with peers and potential recruiters by allowing them to create dynamic profiles and share their work.
 
 
+
 ---
 
 ## 🚀 Key Features
