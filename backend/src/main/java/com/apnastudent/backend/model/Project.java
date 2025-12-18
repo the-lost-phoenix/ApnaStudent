@@ -24,10 +24,11 @@ public class Project {
 
     private String demoUrl;
 
-    // @Lob tells MySQL this is a Large Object (Long text)
-    // "LONGTEXT" allows storing huge Readme files (up to 4GB)
+    // @Lob tells JPA this is a Large Object
+    // "TEXT" maps to TEXT in Postgres (Unlimited) and TEXT in MySQL (64KB).
+    // For wider compatibility or larger files in MySQL, we relies on JPA/Hibernate dialect handling.
     @Lob
-    @Column(columnDefinition = "LONGTEXT")
+    @Column(columnDefinition = "TEXT")
     private String readmeContent;
 
     // RELATIONSHIP MAPPING
