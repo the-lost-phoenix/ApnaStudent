@@ -7,5 +7,6 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
 
     // Custom Query: Find all projects belonging to a specific student
-    List<Project> findByUserId(Long userId);
+    // Custom Query: Find all projects belonging to a specific student
+    List<Project> findByUser_Id(Long userId);
 }

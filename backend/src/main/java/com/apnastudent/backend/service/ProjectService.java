@@ -30,7 +30,7 @@ public class ProjectService {
     }
 
     public List<Project> getProjectsByUserId(Long userId) {
-        return projectRepository.findByUserId(userId);
+        return projectRepository.findByUser_Id(userId);
     }
 
     public List<Project> getAllProjects() {

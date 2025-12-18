@@ -33,7 +33,10 @@ public class ProjectController {
     // URL: GET http://localhost:8080/api/projects/user/1
     @GetMapping("/user/{userId}")
     public List<Project> getProjectsByUser(@PathVariable Long userId) {
-        return projectService.getProjectsByUserId(userId);
+        System.out.println("Fetching projects for User ID: " + userId);
+        List<Project> projects = projectService.getProjectsByUserId(userId);
+        System.out.println("Found " + projects.size() + " projects.");
+        return projects;
     }
 
     // 4. Delete Project
