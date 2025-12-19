@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useClerk } from '@clerk/clerk-react';
 import { getAppStats, getAllUsers, deleteUser, adminAddUser } from '../services/api';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
+    const { signOut } = useClerk();
     const [stats, setStats] = useState({ users: 0, projects: 0 });
     const [users, setUsers] = useState<any[]>([]);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -69,6 +71,10 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex gap-4">
                     <button onClick={() => navigate('/')} className="px-4 py-2 text-sm text-gray-400 hover:text-white">Go Home</button>
+                    <button onClick={() => {
+                        signOut(() => navigate('/'));
+                        localStorage.removeItem("user");
+                    }} className="px-4 py-2 text-sm text-red-500 hover:text-red-400 uppercase font-bold tracking-wider">Logout</button>
                     <button onClick={() => setShowAddModal(true)} className="px-6 py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors">+ Add User</button>
                 </div>
             </div>

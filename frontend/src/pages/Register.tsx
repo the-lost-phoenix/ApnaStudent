@@ -64,7 +64,8 @@ const Register = () => {
                 // IMPORTANT: Sync user to our Backend so we have a record in our DB
                 // We send the data we collected in Step 1
                 try {
-                    await registerUser(formData);
+                    const savedUser = await registerUser(formData);
+                    localStorage.setItem("user", JSON.stringify(savedUser)); // Save to storage!
                     alert("Account Verified & Created! Welcome.");
                     navigate('/dashboard');
                 } catch (backendError) {

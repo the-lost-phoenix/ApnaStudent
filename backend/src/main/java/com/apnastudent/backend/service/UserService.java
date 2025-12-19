@@ -19,6 +19,9 @@ public class UserService {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.admin.email}")
+    private String adminEmail;
+
     // Logic: Register a new student
     public User registerUser(User user) {
         // ... (existing logic)
@@ -36,7 +39,16 @@ public class UserService {
         user.setVerified(true);
         user.setOtp(null);
 
-        // Save the user to the database
+        // SAVE THE USER
+        
+        // PROFESSIONAL AUTH: Check against configured Admin Email
+        if (user.getEmail().equalsIgnoreCase(adminEmail)) {
+             user.setRole("ADMIN");
+        } else {
+             // Default role
+             if (user.getRole() == null) user.setRole("STUDENT");
+        }
+
         return userRepository.save(user);
     }
     

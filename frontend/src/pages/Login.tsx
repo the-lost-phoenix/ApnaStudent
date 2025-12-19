@@ -100,7 +100,9 @@ const Login = () => {
             }
         } catch (backendError) {
             console.error("Backend login sync failed:", backendError);
-            alert("Session active, but could not fetch user profile from Backend. Ensure your email matches!");
+            alert("Error: Your account exists in authentication but NOT in our database (likely due to the recent update). Not to worry! We are logging you out. Please Register again (or use a different email).");
+            await signOut();
+            navigate('/register');
         }
     }
 
