@@ -80,6 +80,31 @@ Built with a **Spring Boot** backend and a **React (Vite)** frontend, it feature
 
 ## 📦 Deployment
 
+### Production (Linode VPS - Arch Linux) 🚀
+*   **Operating System**: **Arch Linux** (chosen for minimal footprint and rolling updates).
+*   **Database**: MongoDB (via **Docker** container).
+*   **Process Manager**: **PM2** (ensures 24/7 uptime for Backend & Frontend).
+
+**Deployment Commands (Cheatsheet):**
+1.  **System Setup (Arch)**:
+    ```bash
+    pacman -Syu git docker base-devel jdk21-openjdk maven nodejs npm
+    systemctl start docker
+    ```
+2.  **Database**:
+    ```bash
+    docker run -d -p 27017:27017 --name mongo-db --restart always mongo:latest
+    ```
+3.  **Backend**:
+    ```bash
+    # IMPORTANT: Pass the admin email to sync permissions with Clerk
+    pm2 start java --name "backend" -- -jar target/backend-0.0.1-SNAPSHOT.jar --app.admin.email=YOUR_ADMIN_EMAIL
+    ```
+4.  **Frontend**:
+    ```bash
+    pm2 start "serve -s dist -l 5173" --name "frontend"
+    ```
+
 ### Backend (Render)
 *   **Type**: Web Service (Docker)
 *   **Env Vars**:
