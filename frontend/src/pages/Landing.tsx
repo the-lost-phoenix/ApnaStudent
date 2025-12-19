@@ -2,16 +2,39 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Hero from "@/components/ui/animated-shader-hero";
 import UserSearch from "@/components/UserSearch";
+import { searchStudents } from '../services/api'; // Use search as a wake-up ping
 
 const Landing = () => {
     const navigate = useNavigate();
     const [user, setUser] = React.useState<any>(null);
+    const [isWakingUp, setIsWakingUp] = React.useState(false);
 
     React.useEffect(() => {
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
+
+        // HEALTH CHECK: Try to hit the backend to wake it up
+        const wakeServer = async () => {
+            try {
+                // We use a simple fetch. If it takes > 1.5 seconds, we assume it was sleeping.
+                const timer = setTimeout(() => {
+                    setIsWakingUp(true); // Show "Waking up server..." after 1.5s
+                }, 1500);
+
+                await searchStudents("wake_check"); // Simple read request
+
+                clearTimeout(timer);
+                setIsWakingUp(false); // Server is awake!
+            } catch (e) {
+                console.log("Server wake ping failed (expected if auth required, but connection established)");
+                setIsWakingUp(false);
+            }
+        };
+
+        wakeServer();
+
     }, []);
 
     const handleDashboardClick = () => {
@@ -29,7 +52,15 @@ const Landing = () => {
                 <div className="text-xl font-bold bg-gradient-to-r from-orange-400 to-yellow-200 bg-clip-text text-transparent">
                     ApnaStudent
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-4 items-center">
+                    {/* Server Status Indicator */}
+                    {isWakingUp && (
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 animate-pulse">
+                            <div className="w-2 h-2 bg-orange-500 rounded-full animate-ping"></div>
+                            <span className="text-xs text-orange-400 font-medium">Waking up server...</span>
+                        </div>
+                    )}
+
                     {user ? (
                         <button
                             onClick={handleDashboardClick}
@@ -65,6 +96,18 @@ const Landing = () => {
                 {/* Search Bar Embedded in Hero */}
                 <UserSearch variant="hero" placeholder="Find a Student Developer..." />
             </Hero>
+
+            {/* Mobile Server Wake Notification */}
+            {isWakingUp && (
+                <div className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
+                    <div className="bg-gray-900/90 backdrop-blur-md border border-orange-500/30 p-3 rounded-xl flex items-center gap-3 shadow-lg">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full animate-ping shrink-0"></div>
+                        <p className="text-xs text-gray-300">
+                            <span className="text-orange-400 font-bold">Note:</span> Free servers are waking up. This may take up to 30 seconds.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Info Section (Formerly Search) */}
             <div className="bg-black py-20 px-4 min-h-[50vh] flex flex-col items-center justify-center border-t border-white/10 text-center">

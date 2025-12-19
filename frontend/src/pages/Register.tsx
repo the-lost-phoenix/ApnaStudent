@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSignUp } from '@clerk/clerk-react';
 import { registerUser } from '../services/api';
+import Loader from "@/components/Loader";
 
 const Register = () => {
     const navigate = useNavigate();
     const { isLoaded, signUp, setActive } = useSignUp();
     const [step, setStep] = useState(1); // 1 = Details, 2 = OTP
+    const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -26,6 +28,7 @@ const Register = () => {
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isLoaded) return;
+        setIsLoading(true);
 
         try {
             await signUp.create({
@@ -33,18 +36,19 @@ const Register = () => {
                 password: formData.password,
                 firstName: formData.name.split(" ")[0],
                 lastName: formData.name.split(" ").slice(1).join(" "),
-                // Removed username to avoid "is unknown" error if not enabled in Clerk
             });
 
             // Start Email Verification
             await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
             setStep(2); // Move to OTP step
+            setIsLoading(false);
         } catch (err: any) {
             console.error("Clerk Registration Error:", err);
             // Show more detailed error
             const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || JSON.stringify(err);
             alert("Registration failed: " + errorMessage);
+            setIsLoading(false);
         }
     };
 
@@ -52,6 +56,7 @@ const Register = () => {
     const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isLoaded) return;
+        setIsLoading(true);
 
         try {
             const completeSignUp = await signUp.attemptEmailAddressVerification({
@@ -66,19 +71,24 @@ const Register = () => {
                 try {
                     const savedUser = await registerUser(formData);
                     localStorage.setItem("user", JSON.stringify(savedUser)); // Save to storage!
-                    alert("Account Verified & Created! Welcome.");
-                    navigate('/dashboard');
+                    // Artificial delay for effect
+                    setTimeout(() => {
+                        navigate('/dashboard');
+                    }, 500);
                 } catch (backendError) {
                     console.error("Backend Sync Failed:", backendError);
                     alert("Account created in Clerk but failed to sync to database. Please contact support.");
+                    setIsLoading(false);
                 }
             } else {
                 console.error(JSON.stringify(completeSignUp, null, 2));
                 alert("Verification incomplete. Check console.");
+                setIsLoading(false);
             }
         } catch (err: any) {
             console.error("Clerk Verification Error:", err);
             alert("Verification failed: " + (err.errors?.[0]?.message || err.message));
+            setIsLoading(false);
         }
     };
 
@@ -98,72 +108,82 @@ const Register = () => {
                     </p>
                 </div>
 
-                {step === 1 ? (
-                    <form onSubmit={handleRegister} className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Full Name</label>
-                            <input name="name" type="text" onChange={handleChange} className="glass-input" placeholder="John Doe" required />
-                        </div>
-
-                        <div>
-                            <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Email</label>
-                            <input name="email" type="email" onChange={handleChange} className="glass-input" placeholder="john@college.edu" required />
-                        </div>
-
-                        <div>
-                            <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Password</label>
-                            <input name="password" type="password" onChange={handleChange} className="glass-input" placeholder="Create a strong password" required />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Username</label>
-                                <input name="username" type="text" onChange={handleChange} className="glass-input" placeholder="vijaynetekal" required />
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">USN</label>
-                                <input name="usn" type="text" onChange={handleChange} className="glass-input" placeholder="1MS21CS..." required />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Short Bio</label>
-                            <textarea name="bio" onChange={handleChange} className="glass-input min-h-[80px]" placeholder="I am a Full Stack Developer..." rows={3}></textarea>
-                        </div>
-
-                        <button type="submit" className="w-full btn-primary mt-6">
-                            Next: Verify Email
-                        </button>
-                    </form>
+                {isLoading ? (
+                    <div className="py-20 flex justify-center">
+                        <Loader message={step === 1 ? "Creating Account..." : "Verifying & Syncing..."} inline={false} />
+                    </div>
                 ) : (
-                    <form onSubmit={handleVerifyOtp} className="space-y-6">
-                        <div>
-                            <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Verification Code (OTP)</label>
-                            <input
-                                name="otp"
-                                type="text"
-                                maxLength={6}
-                                value={otp}
-                                onChange={(e) => setOtp(e.target.value)}
-                                className="glass-input text-center text-2xl tracking-widest font-mono"
-                                placeholder="000000"
-                                required
-                            />
-                        </div>
+                    <>
+                        {step === 1 ? (
+                            <form onSubmit={handleRegister} className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Full Name</label>
+                                    <input name="name" type="text" onChange={handleChange} className="glass-input" placeholder="John Doe" required />
+                                </div>
 
-                        <button type="submit" className="w-full btn-primary mt-6">
-                            Verify & Register
-                        </button>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Email</label>
+                                    <input name="email" type="email" onChange={handleChange} className="glass-input" placeholder="john@college.edu" required />
+                                </div>
 
-                        <button type="button" onClick={() => setStep(1)} className="w-full text-sm text-gray-400 hover:text-white mt-4">
-                            ← Back to details
-                        </button>
-                    </form>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Password</label>
+                                    <input name="password" type="password" onChange={handleChange} className="glass-input" placeholder="Create a strong password" required />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Username</label>
+                                        <input name="username" type="text" onChange={handleChange} className="glass-input" placeholder="vijaynetekal" required />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">USN</label>
+                                        <input name="usn" type="text" onChange={handleChange} className="glass-input" placeholder="1MS21CS..." required />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Short Bio</label>
+                                    <textarea name="bio" onChange={handleChange} className="glass-input min-h-[80px]" placeholder="I am a Full Stack Developer..." rows={3}></textarea>
+                                </div>
+
+                                <button type="submit" className="w-full btn-primary mt-6">
+                                    Next: Verify Email
+                                </button>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleVerifyOtp} className="space-y-6">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-300 ml-1 mb-1 block">Verification Code (OTP)</label>
+                                    <input
+                                        name="otp"
+                                        type="text"
+                                        maxLength={6}
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        className="glass-input text-center text-2xl tracking-widest font-mono"
+                                        placeholder="000000"
+                                        required
+                                    />
+                                </div>
+
+                                <button type="submit" className="w-full btn-primary mt-6">
+                                    Verify & Register
+                                </button>
+
+                                <button type="button" onClick={() => setStep(1)} className="w-full text-sm text-gray-400 hover:text-white mt-4">
+                                    ← Back to details
+                                </button>
+                            </form>
+                        )}
+                    </>
                 )}
 
-                <p className="text-center text-gray-500 mt-6 text-sm">
-                    Already have an account? <button onClick={() => navigate('/login')} className="text-orange-400 hover:text-orange-300 font-medium hover:underline transition-all">Login here</button>
-                </p>
+                {!isLoading && (
+                    <p className="text-center text-gray-500 mt-6 text-sm">
+                        Already have an account? <button onClick={() => navigate('/login')} className="text-orange-400 hover:text-orange-300 font-medium hover:underline transition-all">Login here</button>
+                    </p>
+                )}
             </div>
         </div>
     );

@@ -2,26 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSignIn, useAuth, useClerk } from '@clerk/clerk-react';
 import { loginUser } from '../services/api';
+import Loader from '@/components/Loader';
 
 const Login = () => {
     const navigate = useNavigate();
     const { isLoaded, signIn, setActive } = useSignIn();
     const { isSignedIn, userId } = useAuth();
     const { signOut } = useClerk();
+
+    // State
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isAdminLogin, setIsAdminLogin] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     // AUTO-LOGIN: If Clerk says we have a session, just redirect!
     useEffect(() => {
         if (isLoaded && isSignedIn && userId) {
             console.log("Clerk Session Found (useEffect)! Redirecting...");
+            setIsLoading(true);
             const storedUser = localStorage.getItem("user");
             if (storedUser) {
                 navigate('/dashboard');
             } else {
-                // If we are signed in but don't have local user data, try to fetch it?
-                // Or just let them click login, which will catch the 'already signed in' and fix it.
+                // Try to sync just in case
+                syncAndRedirect("").catch(() => setIsLoading(false));
             }
         }
     }, [isLoaded, isSignedIn, userId, navigate]);
@@ -29,13 +34,7 @@ const Login = () => {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!isLoaded) return;
-
-        // Pre-check: If already signed in, just go!
-        if (isSignedIn) {
-            console.log("User is already signed in (Pre-check). Redirecting...");
-            await syncAndRedirect(email); // Attempt sync with email entered
-            return;
-        }
+        setIsLoading(true);
 
         try {
             // 1. Authenticate with Clerk
@@ -49,38 +48,32 @@ const Login = () => {
                 await syncAndRedirect(email);
             } else {
                 console.error(JSON.stringify(result, null, 2));
-                alert("Login incomplete. Check console.");
+                alert("Login incomplete. Status: " + result.status);
+                setIsLoading(false);
             }
         } catch (err: any) {
             console.error("Clerk Login Error", err);
             const errorMessage = err.errors?.[0]?.message || err.message || JSON.stringify(err);
 
-            // Gracefully handle "You're already signed in"
-            if (errorMessage && (errorMessage.toLowerCase().includes("already signed in") || errorMessage.includes("session_exists"))) {
-                console.log("Already signed in error caught. Redirecting...");
-                await syncAndRedirect(email);
-            } else {
-                alert("Login Failed: " + errorMessage);
-            }
+            setIsLoading(false);
+            alert("Login Failed: " + errorMessage);
         }
     };
 
     // Helper to fetch backend data and redirect
     const syncAndRedirect = async (userEmail: string) => {
         try {
-            // If email is empty (auto-redirect case), we might fail here if we relying on input.
-            // But if user just typed email and clicked login, we have it.
-            // If auto-redirect, we might rely on localStorage.
-
             if (!userEmail) {
+                // If auto-login, try to get from local or user object if available
                 const stored = JSON.parse(localStorage.getItem("user") || '{}');
                 if (stored.email) userEmail = stored.email;
-                else {
-                    // Fallback: If we are signed in but have no email, we might need to fetch from Clerk user object
-                    // For now, let's just assume if they are stuck, they entered the email.
-                    alert("Please enter your email to sync your profile.");
-                    return;
-                }
+            }
+
+            // If we still don't have email and it's an auto-login attempt that failed to find local data,
+            // we might just stop loading and let them login manually.
+            if (!userEmail) {
+                setIsLoading(false);
+                return;
             }
 
             const user = await loginUser(userEmail);
@@ -89,20 +82,26 @@ const Login = () => {
             if (isAdminLogin && user.role !== 'ADMIN') {
                 alert("Access Denied: You are not an Admin.");
                 localStorage.removeItem("user");
+                await signOut();
+                setIsLoading(false);
                 return;
             }
 
-            alert(`Welcome back, ${user.name}!`);
-            if (user.role === 'ADMIN') {
-                navigate('/admin');
-            } else {
-                navigate('/dashboard');
-            }
+            // Small delay to show the nice animation if it was too fast
+            setTimeout(() => {
+                if (user.role === 'ADMIN') {
+                    navigate('/admin');
+                } else {
+                    navigate('/dashboard');
+                }
+            }, 500);
+
         } catch (backendError) {
             console.error("Backend login sync failed:", backendError);
-            alert("Error: Your account exists in authentication but NOT in our database (likely due to the recent update). Not to worry! We are logging you out. Please Register again (or use a different email).");
+            alert("Error: Your account exists in authentication but NOT in our database. Logging you out...");
             await signOut();
             navigate('/register');
+            setIsLoading(false);
         }
     }
 
@@ -122,63 +121,71 @@ const Login = () => {
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="glass-input focus:border-opacity-50 transition-colors"
-                            placeholder="you@university.edu"
-                            required
-                        />
+                {isLoading ? (
+                    <div className="py-10 flex justify-center">
+                        <Loader message={isAdminLogin ? "Verifying Access..." : "Accessing Dashboard..."} inline={false} />
                     </div>
+                ) : (
+                    <form onSubmit={handleLogin} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="glass-input focus:border-opacity-50 transition-colors"
+                                placeholder="you@university.edu"
+                                required
+                            />
+                        </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="glass-input focus:border-opacity-50 transition-colors"
-                            placeholder="••••••••"
-                            required
-                        />
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="glass-input focus:border-opacity-50 transition-colors"
+                                placeholder="••••••••"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className={`w-full font-bold py-3 rounded-xl transition-all duration-300 shadow-lg ${isAdminLogin
+                                ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 shadow-red-500/20'
+                                : 'bg-gradient-to-r from-orange-500 to-yellow-500 text-black hover:scale-[1.02] shadow-orange-500/20'
+                                }`}
+                        >
+                            {isAdminLogin ? 'Access Dashboard' : 'Login to Dashboard'}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => signOut()}
+                            className="w-full text-xs text-red-500 hover:text-red-400 uppercase tracking-widest mt-4"
+                        >
+                            Force Logout (Reset Session)
+                        </button>
+                    </form>
+                )}
+
+                {!isLoading && (
+                    <div className="mt-8 flex flex-col gap-4 text-center text-sm">
+                        <p className="text-gray-500">
+                            New here? <button onClick={() => navigate('/register')} className="text-orange-400 hover:text-orange-300 font-medium hover:underline transition-all">Create an account</button>
+                        </p>
+
+                        <button
+                            onClick={() => setIsAdminLogin(!isAdminLogin)}
+                            className={`text-xs font-semibold uppercase tracking-wider transition-colors ${isAdminLogin ? 'text-red-400 hover:text-red-300' : 'text-gray-600 hover:text-gray-400'}`}
+                        >
+                            {isAdminLogin ? '← Back to Student Login' : 'Admin Access'}
+                        </button>
                     </div>
-
-                    <button
-                        type="submit"
-                        className={`w-full font-bold py-3 rounded-xl transition-all duration-300 shadow-lg ${isAdminLogin
-                            ? 'bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 shadow-red-500/20'
-                            : 'bg-gradient-to-r from-orange-500 to-yellow-500 text-black hover:scale-[1.02] shadow-orange-500/20'
-                            }`}
-                    >
-                        {isAdminLogin ? 'Access Dashboard' : 'Login to Dashboard'}
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => signOut()}
-                        className="w-full text-xs text-red-500 hover:text-red-400 uppercase tracking-widest mt-4"
-                    >
-                        Force Logout (Reset Session)
-                    </button>
-
-                </form>
-
-                <div className="mt-8 flex flex-col gap-4 text-center text-sm">
-                    <p className="text-gray-500">
-                        New here? <button onClick={() => navigate('/register')} className="text-orange-400 hover:text-orange-300 font-medium hover:underline transition-all">Create an account</button>
-                    </p>
-
-                    <button
-                        onClick={() => setIsAdminLogin(!isAdminLogin)}
-                        className={`text-xs font-semibold uppercase tracking-wider transition-colors ${isAdminLogin ? 'text-red-400 hover:text-red-300' : 'text-gray-600 hover:text-gray-400'}`}
-                    >
-                        {isAdminLogin ? '← Back to Student Login' : 'Admin Access'}
-                    </button>
-                </div>
+                )}
             </div>
         </div>
     );
